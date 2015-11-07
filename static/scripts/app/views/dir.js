@@ -169,7 +169,7 @@ define([
                     }
                 });
 
-                // hide 'rename form in grid view'
+                // hide 'rename form' in grid view
                 $(document).click(function(e) {
                     var target =  e.target || event.srcElement;
                     var $form = $('#grid-rename-form');
@@ -690,7 +690,6 @@ define([
 
                 if (el.hasClass('checkbox-checked')) {
                     all_dirent_checkbox.addClass('checkbox-checked');
-                    all_dirent_grid.addClass('hl');
                     dir.each(function(model) {
                         model.set({'selected': true}, {silent: true});
                     });
