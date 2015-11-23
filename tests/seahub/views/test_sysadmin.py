@@ -2,6 +2,8 @@ from django.core.urlresolvers import reverse
 from django.http.cookie import parse_cookie
 
 from seahub.base.accounts import User
+from seahub.options.models import (UserOptions, KEY_FORCE_PASSWD_CHANGE,
+                                   VAL_FORCE_PASSWD_CHANGE)
 from seahub.test_utils import BaseTestCase
 
 from seaserv import ccnet_threaded_rpc
@@ -44,6 +46,9 @@ class UserResetTest(BaseTestCase):
         self.login_as(self.admin)
 
     def test_can_reset(self):
+        assert len(UserOptions.objects.filter(
+            email=self.user.username, option_key=KEY_FORCE_PASSWD_CHANGE)) == 0
+
         old_passwd = self.user.enc_password
         resp = self.client.post(
             reverse('user_reset', args=[self.user.email])
@@ -52,7 +57,9 @@ class UserResetTest(BaseTestCase):
 
         u = User.objects.get(email=self.user.username)
         assert u.enc_password != old_passwd
-
+        assert UserOptions.objects.get(
+            email=self.user.username,
+            option_key=KEY_FORCE_PASSWD_CHANGE).option_val == VAL_FORCE_PASSWD_CHANGE
 
 class BatchUserMakeAdminTest(BaseTestCase):
     def setUp(self):
@@ -91,6 +98,29 @@ class BatchUserMakeAdminTest(BaseTestCase):
 #         assert u.is_staff is True
 #         assert u.enc_password == old_passwd
 
+
+class UserAddTest(BaseTestCase):
+    def setUp(self):
+        self.new_user = 'new_user@test.com'
+        self.login_as(self.admin)
+        self.remove_user(self.new_user)
+
+    def test_can_add(self):
+        assert len(UserOptions.objects.filter(
+            email=self.new_user, option_key=KEY_FORCE_PASSWD_CHANGE)) == 0
+
+        resp = self.client.post(
+            reverse('user_add',), {
+                'email': self.new_user,
+                'password1': '123',
+                'password2': '123',
+            }, HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+
+        self.assertEqual(200, resp.status_code)
+        assert UserOptions.objects.get(
+            email=self.new_user,
+            option_key=KEY_FORCE_PASSWD_CHANGE).option_val == VAL_FORCE_PASSWD_CHANGE
 
 class UserRemoveTest(BaseTestCase):
     def setUp(self):
