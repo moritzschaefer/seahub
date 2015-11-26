@@ -41,6 +41,7 @@ from seahub.utils import IS_EMAIL_CONFIGURED, string2list, is_valid_username, \
 from seahub.utils.rpc import mute_seafile_api
 from seahub.utils.licenseparse import parse_license
 from seahub.utils.sysinfo import get_platform_name
+from seahub.utils.mail import send_html_email_with_dj_template
 from seahub.utils.ms_excel import write_xls
 from seahub.views.ajax import (get_related_users_by_org_repo,
                                get_related_users_by_repo)
@@ -2092,6 +2093,16 @@ def batch_add_user(request):
             except User.DoesNotExist:
                 User.objects.create_user(username, password, is_staff=False,
                                          is_active=True)
+
+                send_html_email_with_dj_template(
+                    username, dj_template='sysadmin/user_batch_add_email.html',
+                    subject=_(u'You are invited to join %s') % SITE_NAME,
+                    context={
+                        'user': request.user.username,
+                        'email': username,
+                        'password': password,
+                    })
+
         messages.success(request, _('Import succeeded'))
     else:
         messages.error(request, _(u'Please select a csv file first.'))
