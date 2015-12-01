@@ -28,6 +28,7 @@ define([
             this.listenTo(this.members, 'reset', this.reset);
 
             this.groupView = options.groupView;
+            this.group_id = this.groupView.group_id;
 
             var _this = this;
             $(window).resize(function() {
@@ -61,7 +62,8 @@ define([
             }
         },
 
-        showGroupMembers: function(group_id) {
+        showGroupMembers: function() {
+            var group_id = this.group_id;
             var maxHeight = this.groupMembersMaxHeight();
             this.$popoverContent.css({'max-height': maxHeight});
             this.$loadingTip.show();
@@ -97,8 +99,8 @@ define([
             this.$el.remove();
         },
 
-        show: function(group_id) {
-            this.showGroupMembers(group_id);
+        show: function() {
+            this.showGroupMembers();
         }
 
     });

@@ -198,7 +198,7 @@ define([
             if (!this.$('.group-members-popover').length) {
                 var $groupMembersPopover = new GroupMembersView({groupView: this});
                 this.$el.append($groupMembersPopover.$el);
-                $groupMembersPopover.show(this.group_id);
+                $groupMembersPopover.show();
             } else {
                 this.$('.group-members-popover').remove();
                 return false;
