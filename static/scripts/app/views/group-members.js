@@ -15,7 +15,7 @@ define([
         membersTemplate: _.template($('#group-members-list-tmpl').html()),
 
         initialize: function(options) {
-            this.$el.append(this.membersTemplate());
+            this.$el.html(this.membersTemplate());
 
             this.$popover = this.$('.popover');
             this.$popoverContent = this.$('.popover-content');
@@ -25,7 +25,6 @@ define([
             this.$loadingTip = this.$('.loading-tip');
 
             this.members = new GroupMembersCollection();
-            this.listenTo(this.members, 'add', this.addOne);
             this.listenTo(this.members, 'reset', this.reset);
 
             this.groupView = options.groupView;
@@ -45,7 +44,6 @@ define([
         },
 
         reset: function() {
-            this.$popoverErrorMsg.hide();
             this.$loadingTip.hide();
             this.members.each(this.addOne, this);
             if (this.$groupMembersList.children('li').length > 1) {
@@ -66,6 +64,7 @@ define([
         showGroupMembers: function(group_id) {
             var maxHeight = this.groupMembersMaxHeight();
             this.$popoverContent.css({'max-height': maxHeight});
+            this.$loadingTip.show();
             var _this = this;
             this.members.setGroupID(group_id);
             this.members.fetch({
@@ -96,10 +95,6 @@ define([
 
         closeMembers: function() {
             this.$el.remove();
-        },
-
-        hide: function() {
-            this.$el.hide();
         },
 
         show: function(group_id) {
