@@ -1048,6 +1048,19 @@ textarea:-moz-placeholder {/* for FF */
     color:red;
     text-align:center;
 }
+/* user profile item */
+.user-profile-item {
+    padding:5px 10px;
+}
+.user-profile-txt {
+    width:75%;
+    display:inline-block;
+    margin-left:10px;
+}
+.user-profile-name,
+.user-profile-email {
+    display:block;
+}
 /**** simplemodal ****/
 #basic-modal-content {display:none;}
 #simplemodal-overlay { background-color:#000; }
@@ -3784,27 +3797,15 @@ img.thumbnail {
     border-radius:1000px;
     vertical-align:middle;
 }
-.group-members-list li {
+.group-members-popover li {
     border-bottom:1px solid #dfdfe1;
 }
-.group-members-list li.hl {
+.group-members-popover li.hl {
     background:#fafafa;
 }
-.group-members-list .group-member-link {
-    padding:5px 10px;
+.group-members-popover .user-profile-item {
     display:block;
     font-weight:normal;
     color:#333;
     text-decoration:none;
-}
-.group-member-link .group-member-profile {
-    width:75%;
-    display:inline-block;
-    margin-left:10px;
-}
-.group-member-profile .name {
-    display:block;
-}
-.group-member-profile .email {
-    margin:0;
 }
