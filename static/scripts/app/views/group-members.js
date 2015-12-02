@@ -12,10 +12,10 @@ define([
         tagName: 'div',
         className: 'group-members-popover',
 
-        membersTemplate: _.template($('#group-members-list-tmpl').html()),
+        template: _.template($('#group-members-list-tmpl').html()),
 
         initialize: function(options) {
-            this.$el.html(this.membersTemplate());
+            this.render();
 
             this.$popover = this.$('.popover');
             this.$popoverContent = this.$('.popover-content');
@@ -38,6 +38,11 @@ define([
                     _this.$popoverContent.css({'max-height': maxHeight});
                 }
             });
+        },
+
+        render: function() {
+            this.$el.html(this.template());
+            return this;
         },
 
         events: {
