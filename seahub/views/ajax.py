@@ -35,7 +35,7 @@ from seahub.message.models import UserMessage
 from seahub.share.models import UploadLinkShare
 from seahub.group.models import PublicGroup
 from seahub.signals import upload_file_successful, repo_created, repo_deleted
-from seahub.views import get_repo_dirents_with_perm, validate_owner, \
+from seahub.views import get_repo_dirents, validate_owner, \
     check_repo_access_permission, get_unencry_rw_repos_by_user, \
     get_system_default_repo_id, get_diff, group_events_data, \
     get_owned_repo_list, check_folder_permission, is_registered_user, \
@@ -288,9 +288,9 @@ def list_dir(request, repo_id):
         path = path + '/'
 
     more_start = None
-    file_list, dir_list, dirent_more = get_repo_dirents_with_perm(request, repo,
+    file_list, dir_list, dirent_more = get_repo_dirents(request, repo,
                                                                   head_commit, path,
-                                                                  offset=0, limit=100)
+                                                                  offset=0, limit=100, with_perm=True)
     if dirent_more:
         more_start = 100
     zipped = get_nav_path(path, repo.name)
@@ -375,9 +375,9 @@ def list_dir_more(request, repo_id):
         return HttpResponse(json.dumps({'error': err_msg}),
                             status=400, content_type=content_type)
     more_start = None
-    file_list, dir_list, dirent_more = get_repo_dirents_with_perm(request, repo,
+    file_list, dir_list, dirent_more = get_repo_dirents(request, repo,
                                                                   head_commit, path,
-                                                                  offset, limit=100)
+                                                                  offset, limit=100, with_perm=True)
     if dirent_more:
         more_start = offset + 100
 
@@ -435,7 +435,7 @@ def list_lib_dir(request, repo_id):
                             status=500, content_type=content_type)
 
     offset = int(request.GET.get('start', 0))
-    file_list, dir_list, dirent_more = get_repo_dirents_with_perm(request, repo, head_commit, path, offset, limit=100)
+    file_list, dir_list, dirent_more = get_repo_dirents(request, repo, head_commit, path, offset, limit=100, with_perm=True)
     more_start = None
     if dirent_more:
         more_start = offset + 100

@@ -225,7 +225,7 @@ def get_file_download_link(repo_id, obj_id, path):
     return reverse('download_file', args=[repo_id, obj_id]) + '?p=' + \
         urlquote(path)
 
-def get_repo_dirents_with_perm(request, repo, commit, path, offset=-1, limit=-1):
+def get_repo_dirents(request, repo, commit, path, offset=-1, limit=-1, with_perm=False):
     """List repo dirents with perm based on commit id and path.
     Use ``offset`` and ``limit`` to do paginating.
 
@@ -234,9 +234,8 @@ def get_repo_dirents_with_perm(request, repo, commit, path, offset=-1, limit=-1)
     TODO: Some unrelated parts(file sharing, stars, modified info, etc) need
     to be pulled out to multiple functions.
     """
-
     if get_system_default_repo_id() == repo.id:
-        return get_repo_dirents(request, repo, commit, path, offset, limit)
+        with_perm = False
 
     dir_list = []
     file_list = []
@@ -246,92 +245,19 @@ def get_repo_dirents_with_perm(request, repo, commit, path, offset=-1, limit=-1)
         return ([], [], False) if limit == -1 else ([], [], False)
     else:
         try:
-            dir_id = seafile_api.get_dir_id_by_path(repo.id, path)
-            if not dir_id:
-                return ([], [], False)
-            dirs = seafserv_threaded_rpc.list_dir_with_perm(repo.id, path,
-                                                            dir_id, username,
-                                                            offset, limit)
-        except SearpcError as e:
-            logger.error(e)
-            return ([], [], False)
-
-        if limit != -1 and limit == len(dirs):
-            dirent_more = True
-
-        starred_files = get_dir_starred_files(username, repo.id, path)
-        fileshares = FileShare.objects.filter(repo_id=repo.id).filter(username=username)
-        uploadlinks = UploadLinkShare.objects.filter(repo_id=repo.id).filter(username=username)
-
-        view_dir_base = reverse('repo', args=[repo.id])
-        dl_dir_base = reverse('repo_download_dir', args=[repo.id])
-        view_file_base = reverse('repo_view_file', args=[repo.id])
-        file_history_base = reverse('file_revisions', args=[repo.id])
-        for dirent in dirs:
-            dirent.last_modified = dirent.mtime
-            dirent.sharelink = ''
-            dirent.uploadlink = ''
-            if stat.S_ISDIR(dirent.props.mode):
-                dpath = posixpath.join(path, dirent.obj_name)
-                if dpath[-1] != '/':
-                    dpath += '/'
-                for share in fileshares:
-                    if dpath == share.path:
-                        dirent.sharelink = gen_dir_share_link(share.token)
-                        dirent.sharetoken = share.token
-                        break
-                for link in uploadlinks:
-                    if dpath == link.path:
-                        dirent.uploadlink = gen_shared_upload_link(link.token)
-                        dirent.uploadtoken = link.token
-                        break
-                p_dpath = posixpath.join(path, dirent.obj_name)
-                dirent.view_link = view_dir_base + '?p=' + urlquote(p_dpath)
-                dirent.dl_link = dl_dir_base + '?p=' + urlquote(p_dpath)
-                dir_list.append(dirent)
-            else:
-                file_list.append(dirent)
-                if repo.version == 0:
-                    dirent.file_size = get_file_size(repo.store_id, repo.version, dirent.obj_id)
+            if with_perm:
+                view_file_base = reverse('repo_view_file', args=[repo.id])
+                dir_id = seafile_api.get_dir_id_by_path(repo.id, path)
+                if not dir_id:
+                    dirs = None
                 else:
-                    dirent.file_size = dirent.size
-                dirent.starred = False
-                fpath = posixpath.join(path, dirent.obj_name)
-                p_fpath = posixpath.join(path, dirent.obj_name)
-                dirent.view_link = view_file_base + '?p=' + urlquote(p_fpath)
-                dirent.dl_link = get_file_download_link(repo.id, dirent.obj_id,
-                                                        p_fpath)
-                dirent.history_link = file_history_base + '?p=' + urlquote(p_fpath)
-                if fpath in starred_files:
-                    dirent.starred = True
-                for share in fileshares:
-                    if fpath == share.path:
-                        dirent.sharelink = gen_file_share_link(share.token)
-                        dirent.sharetoken = share.token
-                        break
-
-        return (file_list, dir_list, dirent_more)
-
-def get_repo_dirents(request, repo, commit, path, offset=-1, limit=-1):
-    """List repo dirents based on commit id and path. Use ``offset`` and
-    ``limit`` to do paginating.
-
-    Returns: A tupple of (file_list, dir_list, dirent_more)
-
-    TODO: Some unrelated parts(file sharing, stars, modified info, etc) need
-    to be pulled out to multiple functions.
-    """
-
-    dir_list = []
-    file_list = []
-    dirent_more = False
-    if commit.root_id == EMPTY_SHA1:
-        return ([], [], False) if limit == -1 else ([], [], False)
-    else:
-        try:
-            dirs = seafile_api.list_dir_by_commit_and_path(commit.repo_id,
-                                                           commit.id, path,
-                                                           offset, limit)
+                    dirs = seafserv_threaded_rpc.list_dir_with_perm(repo.id, path,
+                                                                dir_id, username,
+                                                                offset, limit)
+            else:
+                dirs = seafile_api.list_dir_by_commit_and_path(commit.repo_id,
+                                                              commit.id, path,
+                                                              offset, limit)
             if not dirs:
                 return ([], [], False)
         except SearpcError as e:
@@ -341,7 +267,6 @@ def get_repo_dirents(request, repo, commit, path, offset=-1, limit=-1):
         if limit != -1 and limit == len(dirs):
             dirent_more = True
 
-        username = request.user.username
         starred_files = get_dir_starred_files(username, repo.id, path)
         fileshares = FileShare.objects.filter(repo_id=repo.id).filter(username=username)
         uploadlinks = UploadLinkShare.objects.filter(repo_id=repo.id).filter(username=username)
@@ -380,7 +305,10 @@ def get_repo_dirents(request, repo, commit, path, offset=-1, limit=-1):
                 dirent.starred = False
                 fpath = posixpath.join(path, dirent.obj_name)
                 p_fpath = posixpath.join(path, dirent.obj_name)
-                dirent.view_link = reverse('view_lib_file', args=[repo.id, urlquote(p_fpath)])
+                if with_perm:
+                    dirent.view_link = view_file_base + '?p=' + urlquote(p_fpath)
+                else:
+                    dirent.view_link = reverse('view_lib_file', args=[repo.id, urlquote(p_fpath)])
                 dirent.dl_link = get_file_download_link(repo.id, dirent.obj_id,
                                                         p_fpath)
                 dirent.history_link = file_history_base + '?p=' + urlquote(p_fpath)
@@ -393,6 +321,8 @@ def get_repo_dirents(request, repo, commit, path, offset=-1, limit=-1):
                         break
 
         return (file_list, dir_list, dirent_more)
+
+
 
 def get_unencry_rw_repos_by_user(request):
     """Get all unencrypted repos the user can read and write.
