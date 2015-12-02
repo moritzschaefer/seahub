@@ -1055,11 +1055,15 @@ textarea:-moz-placeholder {/* for FF */
 .user-profile-txt {
     width:75%;
     display:inline-block;
+    vertical-align:middle;
     margin-left:10px;
 }
 .user-profile-name,
 .user-profile-email {
     display:block;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 /**** simplemodal ****/
 #basic-modal-content {display:none;}
